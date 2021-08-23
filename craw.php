@@ -412,21 +412,6 @@ function dominioMain( $dom, $dns = false){
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-	#print_r(  extUrl( 'https://capacita-sustentabilidad.unison.edu.mx/login'  ) );
-
-
-
 	print_r(  extUrl( 'https://www.unison.mx'  ) );
 
 
