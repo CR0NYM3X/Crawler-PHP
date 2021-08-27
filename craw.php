@@ -37,7 +37,7 @@ function extUrl( $url ){
 
 	
 		#Eliminando dominios conocidos
-		$linksTotal = preg_grep("#github.com|google.com|www.google|youtube.com|wikipedia.org|facebook.org|facebook.com|fb.com|wikipedia.org|twitch.org|twitter.com|twitter.org|tiktok.com|instagram.com|netflix.com|wiktionary.org|yahoo.com#i",$linksTotal,PREG_GREP_INVERT);
+		$linksTotal = preg_grep("#github.com|google.com|www.google|youtu.be|youtube.com|wikipedia.org|facebook.org|facebook.com|fb.com|wikipedia.org|twitch.org|twitter.com|twitter.org|tiktok.com|instagram.com|netflix.com|wiktionary.org|yahoo.com#i",$linksTotal,PREG_GREP_INVERT);
 
 
 		#eliminando caracteres inservibles
@@ -65,16 +65,35 @@ function extUrl( $url ){
 
 	$l = clasificarDom( $linksTotal, dominioMain($url) );
 
-	$d = wantDomain( $l['links'] );  #obtiene los pueros dominios de links sin repetir
-
-	$domcheck = checkDomain( $d ,$dominio );
-	$l['domain'] = $domcheck['domGood'];
 
 
 
+
+	$p =  checkLinks( [dominioMain( $url )], $l['links'] );# aqui verifica si hay links que coincidad con la url main
+	$l['domain'] = $p['domain'];
+	$l['linkDomain'] = $p['linkGood2'];
+	$l['links'] = $p['linkBad2'];
+
+
+
+	$d = wantDomain( $l['links'] );  #obtiene los pueros dominios de links sin repetir dominios
+	$domcheck = checkDomain( $d ,$dominio ); #checa los dominios y verifica que sean similar a la ipDns del dommain 
+	$l['domain'] = array_merge($l['domain'], $domcheck['domGood']);
+
+
+
+	print_r( $l   );
+
+
+
+
+
+/*
 	$statusDom = domOnLink( $l['links'] , $domcheck['domGood'] ); 
 	$l['links'] = $statusDom['linkBad'];
 	$l['linkDomain'] = $statusDom['linkGood'];
+
+
 
 
 	$linksCheck =  checkLinks( $l['domain'], $l['links'] );
@@ -82,21 +101,10 @@ function extUrl( $url ){
 
 	$l['domain'] = array_merge($l['domain'], $linksCheck['domain']);
 	$l['linkDomain'] = array_merge($l['linkDomain'], $linksCheck['linkGood2']);
-
-
 	$l['links'] = $linksCheck['linkBad2'];
 
-
-	print_r( $l );
-
-	#array_merge($l['linkDomain'], $linksCheck['linkGood2']);
-
-
-/*
-	$l = checkDomain( clasificarDom( $linksTotal ),$dominio );
-	$l['onlyDomain'] = onlyDomain( $l['link'] );
-	print_r( $l );
 */
+
 
 }
 
@@ -112,14 +120,13 @@ function checkLinks( $dom, $links ){
 
 	foreach ($dom as $value) {
 		$partDom = explode('.', $value);
-		$exprDom[] .=  '\.'.$partDom[ (count($partDom)-2) ];
+		$exprDom[] .=  $partDom[ (count($partDom)-2) ].'\.' ;
 
 	}
 
 	$exprDom = array_unique( $exprDom, SORT_STRING );
 	$exprDom = implode('|',  $exprDom );
 
-	  
 
 	 foreach ($links as $key => $value) {
 	 	
@@ -271,6 +278,7 @@ function clasificarDom( $Dom, $DomMain ){
 		}
 		else
 		{
+			
 			if ( !preg_match("#\#|\@#i", $value) ) {
 				
 				if ( preg_match("#^[a-z]#i", $value) ) {
@@ -412,9 +420,7 @@ function dominioMain( $dom, $dns = false){
 
 
 
-	print_r(  extUrl( 'https://www.unison.mx'  ) );
-
-
+	print_r(  extUrl( "https://blog.segu-info.com.ar/"  ) );
 
 
 
@@ -429,7 +435,9 @@ obtener rutas
 
 	*/
 
+#https://neobuy2u.com/wp-login.php?redirect_to=https%3A%2F%2Fneobuy2u.com%2Fwp-admin%2Fpost.php%3Faction%3Dedit%26post%3D3&reauth=1
 
 ?>
+
 
 

@@ -434,13 +434,22 @@ class facilcurl
 			}
 			
 			
+			curl_setopt($this->session, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_NONE); // version por defaults, para identificar la verciones de http
 			curl_setopt($this->session, CURLOPT_HTTPHEADER, $this->varCabeceras); //enviar cabeseras
 			curl_setopt($this->session, CURLOPT_FOLLOWLOCATION, true); // permitir los location: si nos manda a otra paginas
 			curl_setopt($this->session, CURLOPT_RETURNTRANSFER, true); // TRUE para devolver el resultado de la transferencia como string del valor de curl_exec() 
-			curl_setopt($this->session, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_NONE); // version por defaults, para identificar la verciones de http
 			curl_setopt($this->session,  CURLOPT_ENCODING, "gzip,deflate,sdch" );//si se deja en "" maneja todas las codificaciones se pone basio para que soporte todas las codificaciones: es mejor -> [gzip,deflate,sdch]
 			curl_setopt($this->session, CURLOPT_FAILONERROR, true); // si hay un mensaje de error mayor de 400 se ignorara el codigo
 			curl_setopt($this->session, CURLINFO_HEADER_OUT, true);	 #habilitra para ver como esta mandando las cabeceras al servidor
+
+
+			
+
+			#curl_setopt($this->session, CURLOPT_HTTP_VERSION , CURL_HTTP_VERSION_2_0);	
+  			#curl_setopt($this->session, CURLOPT_RETURNTRANSFER , true);	
+
+
+			
 			//$this->proxy("127.0.0.1:8080");
 			
 
