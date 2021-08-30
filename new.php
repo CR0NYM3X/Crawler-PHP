@@ -7,12 +7,12 @@ class Craw
 {
 										# EJEMPLOS	
 	private static $url			= '';	# https://www.myDominio.com/index.php
-	private static $ipUrl		= '';	# 185.168.100.12
+	public static $ipUrl		= '';	# 185.168.100.12
 	private static $urlDomain 	= '';	# www.myDominio.com
 	private static $codeUrl 	= '';	# <html> code </html>
 	private static $keywords 	= []; 	#son palabras claves que tienen los dominios www.rancho.vaca.mx   www.zo.vaca.mx la palabra clave es vaca 
 	private static $trashDominos 	= [];
-	private static $links		=  [	'linksMain' 		=> [], 
+	public static $links		=  [	'linksMain' 		=> [], 
 										'linksSubDomain' 	=> [],
 										'subDomains' 		=> [],
 										'links' 			=> [],
@@ -35,7 +35,7 @@ class Craw
 	#private static $domainsByCountry	=  [];
 
 	private static $socialNetworks	= [ 'youtu.be', 'youtube.com', 'facebook.org', 'facebook.com', 'fb.com', 'twitch.org', 'twitter.com', 'twitter.org', 'maps.google',
-										'tiktok.com', 'instagram.com', 'telegram.me', 'telegram.com', 'whatsapp.com', 'snapchat.com', 'gmail.com', 'github.com', 'linkedin.com' ];
+										'tiktok.com', 'instagram.com', 'telegram.me', 'telegram.com', 'whatsapp.com', 'snapchat.com', 'gmail.com', 'github.com', 'linkedin.com', 'messenger.com' ];
 
 
 	#son Expresiones que se utilizaran para clasificar las url
@@ -50,6 +50,9 @@ class Craw
 
 	public static function start( $url )
 	{
+
+
+
 
 		#Verifica que la url cumpla con los parametros necesarios para poder trabajar con ella
 		self::$url 					= self::checkUrl( $url );
@@ -92,26 +95,13 @@ class Craw
 		self::saveLinks( self::classifyLinks( $linksWithFilter ) );
 
 
-
 		#get matching subdomains
 		#return self::$links;
-		print_r( self::$links );
+
+		return self::$links;
 
 
-		#hacen lo posible para extraer todo
-		$Ds = array_values(  self::deleteRepeated( self::extractDomain( self::$links['links'] ) ) );
-		self::checkDomainsIp( ( $Ds ) , self::$ipUrl ); 
-
-
-
-
-		#$f = self::applyKeywordToDomains( $Ds,  ['\.uson', 'uson\.'] ); 
-		#print_r($f);
-
-
-		#buscar links mandandole liks con un array de dominos
-
-		
+	
 	}
 
 
@@ -176,27 +166,21 @@ class Craw
 
 		}#end while
 
-
 		if ( empty( $domGood ) )
 			return false;
 
-		echo "\n\n\ncantidad de vueltas realizadas : $i\n";
-		print_r( [ 'keywords' => $k, 'subDomains' => $domGood,'links' => $domBad ] );
+		#echo "\n\n\ncantidad de vueltas realizadas : $i\n";
+		return [ 'keywords' => $k, 'subDomains' => $domGood,'links' => $domBad ] ;
 
-
-		#  if ( preg_match("#". self::prepareExp( self::$expDesign ) ."#i", $value) ) {
 
 	}
 
 
-/*
 
-2 problemas
 
-1 nike no lo lee
-2 variable dombad no esta bien
-
-*/
+	public static function getKeywords(  ){
+		return self::$keywords;
+	}
 
 
 	public static function applyKeywordToDomains( $doms, $k ){
@@ -230,28 +214,23 @@ class Craw
 
 
 
-
-
-
-
+	/*
+	*	Se guarda todo  en la variable links
+	*/
 
 	public static function saveLinks( $parLinks ){
 
-		self::$links[ 'linksMain' ]			=  array_values( (	array_merge( self::$links[ 'linksMain' ]		, $parLinks[ 'linksMain' 	])	 ));
-		self::$links[ 'linksSubDomain' ]	=  array_values( array_unique(	array_merge( self::$links[ 'linksSubDomain' ], $parLinks[ 'linksSubDomain'])	, SORT_STRING ));
-		self::$links[ 'subDomains' ]		=  array_values( (	array_merge( self::$links[ 'subDomains' ]	, $parLinks[ 'subDomains' ])		));
-		self::$links[ 'links' ]				=  array_values( (	array_merge( self::$links[ 'links' ]			, $parLinks[ 'links' ])			 ));
-
-		self::$links[ 'socialNetwork' ]		=  array_values( (	array_merge( self::$links[ 'socialNetwork' ]			, $parLinks[ 'socialNetwork' ])			 ));
-		self::$links[ 'linksImg' ]			=  array_values( array_unique(	array_merge( self::$links[ 'linksImg' ]		, $parLinks[ 'linksImg' ])			, SORT_STRING ));
-		self::$links[ 'linksDesign' ]		=  array_values( array_unique(	array_merge( self::$links[ 'linksDesign' ]	, $parLinks[ 'linksDesign'])		, SORT_STRING ));	
-		self::$links[ 'linksDoc' ]			=  array_values( array_unique(	array_merge( self::$links[ 'linksDoc' ]		, $parLinks[ 'linksDoc' ])			, SORT_STRING ));
-		self::$links[ 'linksCompress' ]		=  array_values( array_unique(	array_merge( self::$links[ 'linksCompress' ]	, $parLinks[ 'linksCompress'])	, SORT_STRING ));
-		self::$links[ 'linksTrash' ]		=  array_values( array_unique(	array_merge( self::$links[ 'linksTrash' ]	, $parLinks[ 'linksTrash' ])		, SORT_STRING ));
-		self::$links[ 'mail' ]				=  array_values( array_unique(	array_merge( self::$links[ 'mail' ]			, $parLinks[ 'mail' ])				, SORT_STRING ));
-
-
-
+		self::$links[ 'linksMain' ]			=  array_values( array_unique(	array_merge( self::$links[ 'linksMain' ]		, $parLinks[ 'linksMain' 	])		, SORT_STRING ));
+		self::$links[ 'linksSubDomain' ]	=  array_values( array_unique(	array_merge( self::$links[ 'linksSubDomain' ]	, $parLinks[ 'linksSubDomain'])		, SORT_STRING ));
+		self::$links[ 'subDomains' ]		=  array_values( array_unique(	array_merge( self::$links[ 'subDomains' ]		, $parLinks[ 'subDomains' ])		, SORT_STRING ));
+		self::$links[ 'links' ]				=  array_values( array_unique(	array_merge( self::$links[ 'links' ]			, $parLinks[ 'links' ])			 	, SORT_STRING ));
+		self::$links[ 'socialNetwork' ]		=  array_values( array_unique(	array_merge( self::$links[ 'socialNetwork' ]	, $parLinks[ 'socialNetwork' ])		, SORT_STRING ));
+		self::$links[ 'linksImg' ]			=  array_values( array_unique(	array_merge( self::$links[ 'linksImg' ]			, $parLinks[ 'linksImg' ])			, SORT_STRING ));
+		self::$links[ 'linksDesign' ]		=  array_values( array_unique(	array_merge( self::$links[ 'linksDesign' ]		, $parLinks[ 'linksDesign'])		, SORT_STRING ));	
+		self::$links[ 'linksDoc' ]			=  array_values( array_unique(	array_merge( self::$links[ 'linksDoc' ]			, $parLinks[ 'linksDoc' ])			, SORT_STRING ));
+		self::$links[ 'linksCompress' ]		=  array_values( array_unique(	array_merge( self::$links[ 'linksCompress' ]	, $parLinks[ 'linksCompress'])		, SORT_STRING ));
+		self::$links[ 'linksTrash' ]		=  array_values( array_unique(	array_merge( self::$links[ 'linksTrash' ]		, $parLinks[ 'linksTrash' ])		, SORT_STRING ));
+		self::$links[ 'mail' ]				=  array_values( array_unique(	array_merge( self::$links[ 'mail' ]				, $parLinks[ 'mail' ])				, SORT_STRING ));
 	}
 
 
@@ -428,12 +407,6 @@ class Craw
 							'mail' 				=> [] ];
 
 	}
-
-
-
-
-
-
 
 
 
@@ -735,25 +708,34 @@ class Craw
 #Agregando keyword para facilitar el trabajo al buscar subdominios
 
 
-#Craw::putkeywords( ['\.uson', 'uson\.'] );
-
 #$data =  Craw::start( 'https://unam.mx/' );
 #$data =  Craw::start( 'https://uvm.mx/' );
-
-
 #$data =  Craw::start( 'https://une.sonora.gob.mx/' ); # no tiene
-
-
 #$data =  Craw::start( 'https://tecmilenioenlinea.mx/' );
 
 
 
 
-#$data =  Craw::start( 'https://www.unison.mx/' );
-$data =  Craw::start( 'https://tec.mx/' );
+$data =  Craw::start( 'https://www.unison.mx/' );
 #$data =  Craw::start( 'https://www.srm.pr.gov/' );
+#$data =  Craw::start( 'https://tec.mx/' );
 
-print_r( $data );
+#hacen lo posible para extraer todo los subdominios de la url que consultamos
+$Ds = array_values(  Craw::deleteRepeated( Craw::extractDomain( Craw::$links['links'] ) ) );
+$l = Craw::checkDomainsIp( ( $Ds ) , Craw::$ipUrl ); 
+
+Craw::$links[ 'subDomains' ] = array_merge(Craw::$links[ 'subDomains' ], $l[ 'subDomains' ]  );
+Craw::$links[ 'links' ] = $l[ 'links' ];
+
+
+print_r( Craw::$links );
+
+Craw::putkeywords( $l[ 'keywords' ] );
+
+
+
+print_r( Craw::getKeywords() );
+#print_r( Craw::getKeywords() );
  
 
 
