@@ -1,8 +1,5 @@
 <?php 
-
-
 require_once("class_curl/facilcurl.php"); 
-
 
 
 
@@ -19,6 +16,7 @@ class Craw
 										'linksSubDomain' 	=> [],
 										'subDomains' 		=> [],
 										'links' 			=> [],
+										'socialNetwork'		=> [],
 										'linksImg' 			=> [],
 										'linksDesign' 		=> [],
 										'linksDoc' 			=> [],
@@ -28,10 +26,16 @@ class Craw
 
 
 
-
 	#https://es.wikipedia.org/wiki/Dominio_de_nivel_superior_gen%C3%A9rico
-	private static $gtopLevelDomains	= [ 'com', 'org', 'net', 'info', 'biz', 'name', 'pro', 'gov', 'edu', 'mil', 'int', 'aero', 'coop', 'museum', 'cat', 
+	private static $gtopLevelDomains	= [ 'gob', 'com', 'org', 'net', 'info', 'biz', 'name', 'pro', 'gov', 'edu', 'mil', 'int', 'aero', 'coop', 'museum', 'cat', 
 											'jobs', 'mobi', 'tel', 'travel', 'asia', 'xxx', 'post', 'eus', 'email', 'gal', 'arpa', 'root', 'blogspot' ];
+				
+
+	#https://www.ionos.mx/digitalguide/dominios/extensiones-de-dominio/cctld-la-lista-completa-de-dominios-por-pais/
+	#private static $domainsByCountry	=  [];
+
+	private static $socialNetworks	= [ 'youtu.be', 'youtube.com', 'facebook.org', 'facebook.com', 'fb.com', 'twitch.org', 'twitter.com', 'twitter.org', 'maps.google',
+										'tiktok.com', 'instagram.com', 'telegram.me', 'telegram.com', 'whatsapp.com', 'snapchat.com', 'gmail.com', 'github.com', 'linkedin.com' ];
 
 
 	#son Expresiones que se utilizaran para clasificar las url
@@ -40,9 +44,7 @@ class Craw
 
 	private static $expImg		= [ '\.ico', '\.png', '\.BMP', '\.TIFF', '\.jpg', '\.JPEG', '\.GIF', '\.PNG', '\.EPS', '\.SVG', '\.EPS', '\.WebP', '\.heif', '\.psd', '\.ai', '\.xcf', '\.indd' ];
 	private static $expCompress	= [ '\.zip', '\.ZIPX', '\.TAR', '\.GZ', '\.RAR', '\.7z', '\.ACE' ];
-	private static $expDesign	= [ '\.CSS', '\.JS', '\.eot', '\.woff', '\.ttf' ];
-
-
+	private static $expDesign	= [ '\.CSS', '\.JS', '\.eot', '\.woff', '\.ttf', 'fonts.google'];#, 'apis\.', '\.apis', 'api\.', '\.api' 
 
 	
 
@@ -70,29 +72,12 @@ class Craw
 
 
 		#Eliminando Dominos que no queremos
-		self::putTrashDominos( [ 'github.com',
-								 'google.com',
-								 'www.google',
-								 'youtu.be',
-								 'youtube.com',
-								 'wikipedia.org',
-								 'facebook.org',
-								 'facebook.com',
-								 'fb.com',
-								 'wikipedia.org',
-								 'twitch.org',
-								 'twitter.com',
-								 'twitter.org',
-								 'tiktok.com',
-								 'instagram.com',
-								 'netflix.com',
-								 'wiktionary.org',
-								 'yahoo.com',
-								 'office.com',
-								 'telegram.me',
-								 'telegram.com',
-								 'whatsapp.com' ] );
-
+		self::putTrashDominos( [ 	'wikipedia.org',
+									'netflix.com',
+									'wiktionary.org',
+									'yahoo.com',
+									'office.com',
+									'wikipedia.org' ] );
 
 
 		#Se aplicaron filtros para eliminar links repetidos y dominios que no queremos etc..
@@ -103,27 +88,172 @@ class Craw
 		self::putkeywords( self::extractKeyword( self::$urlDomain ) );
 
 
-
 		#Se Clasifican los links separandolos por pdf, documentos, links de diseño
-		self::$links = self::classifyLinks( $linksWithFilter );
+		self::saveLinks( self::classifyLinks( $linksWithFilter ) );
 
 
 
+		#get matching subdomains
+		#return self::$links;
 		print_r( self::$links );
+
+
+		#hacen lo posible para extraer todo
+		$Ds = array_values(  self::deleteRepeated( self::extractDomain( self::$links['links'] ) ) );
+		self::checkDomainsIp( ( $Ds ) , self::$ipUrl ); 
+
+
+
+
+		#$f = self::applyKeywordToDomains( $Ds,  ['\.uson', 'uson\.'] ); 
+		#print_r($f);
 
 
 		#buscar links mandandole liks con un array de dominos
 
-
-
-		#print_r( self::prepareExp( self::$trashDominos ) );
-
-		#print_r( self::$keywords );
 		
+	}
+
+
+
+	# Verifica los diminos que coincidad con el dimino original de dns
+	public static function checkDomainsIp( $Dom, $ip ){
+
+		$AipMain = explode('.', $ip);
+		$i = 0;
+
+		$domFun = $Dom;
+
+		$domGood 	= [];
+		$domBad		= [];
+		$domExp 	= [ '2-a8s8d' ];
+		$k = [];
+
+		while (  @$domFun[$i] ) 
+		{
+
+
+			#Verifica si un domino ya fue escaneado
+			if ( !preg_match("#". self::prepareExp( $domExp ) ."#i", $domFun[$i]) ) { #if 1
+
+				$ipUrl 	=   explode('.',@dns_get_record( $domFun[$i], DNS_A)[0]['ip'] );		
+
+				if ( ($ipUrl[0] == $AipMain[0]) and ($ipUrl[1] == $AipMain[1]) )  #if #2
+				{
+					#echo "Goooood : ".$domFun[$i]."\n";
+					
+					$knormal = self::extractKeyword( $domFun[$i] );	
+					$k =  array_merge( $k ,   $knormal);
+
+					$f = self::applyKeywordToDomains( $domFun , $knormal );
+					$domGood 	= array_merge( $domGood ,$f['good']);
+					$domFun 	= $f['bad'];
+					$domBad		= $f['bad'];
+
+					$i = 0;
+				
+				} #if #2
+				else
+				{
+
+		
+					#echo "Baaaaad : ".$domFun[$i]."\n";
+					$domExp[] .= $domFun[$i];
+				 	$i++;
+
+
+				} #if #2
+			
+			} #if #1
+			else{
+
+				#echo 'Ya escanee  :  '. $domFun[$i]."\n";
+				$i++;
+
+			}#if #1
+
+
+
+		}#end while
+
+
+		if ( empty( $domGood ) )
+			return false;
+
+		echo "\n\n\ncantidad de vueltas realizadas : $i\n";
+		print_r( [ 'keywords' => $k, 'subDomains' => $domGood,'links' => $domBad ] );
+
+
+		#  if ( preg_match("#". self::prepareExp( self::$expDesign ) ."#i", $value) ) {
+
+	}
+
+
+/*
+
+2 problemas
+
+1 nike no lo lee
+2 variable dombad no esta bien
+
+*/
+
+
+	public static function applyKeywordToDomains( $doms, $k ){
+		$domGood	= [];
+		$domBad		= [];
+
+		
+		foreach ($doms as $value) {
+
+			#aqui es donde usa el poder de las keyword
+			if ( preg_match("#". self::prepareExp( $k ) ."#i", $value) ) {
+
+				$domGood[] 	.= $value;
+
+			}else{
+
+				$domBad[] .= $value;
+			}
+			
+
+		}
+
+
+
+
+		$z=  [ 'good' => $domGood,'bad' => $domBad ];
+		return $z;
+	}
+
+
+
+
+
+
+
+
+
+
+	public static function saveLinks( $parLinks ){
+
+		self::$links[ 'linksMain' ]			=  array_values( (	array_merge( self::$links[ 'linksMain' ]		, $parLinks[ 'linksMain' 	])	 ));
+		self::$links[ 'linksSubDomain' ]	=  array_values( array_unique(	array_merge( self::$links[ 'linksSubDomain' ], $parLinks[ 'linksSubDomain'])	, SORT_STRING ));
+		self::$links[ 'subDomains' ]		=  array_values( (	array_merge( self::$links[ 'subDomains' ]	, $parLinks[ 'subDomains' ])		));
+		self::$links[ 'links' ]				=  array_values( (	array_merge( self::$links[ 'links' ]			, $parLinks[ 'links' ])			 ));
+
+		self::$links[ 'socialNetwork' ]		=  array_values( (	array_merge( self::$links[ 'socialNetwork' ]			, $parLinks[ 'socialNetwork' ])			 ));
+		self::$links[ 'linksImg' ]			=  array_values( array_unique(	array_merge( self::$links[ 'linksImg' ]		, $parLinks[ 'linksImg' ])			, SORT_STRING ));
+		self::$links[ 'linksDesign' ]		=  array_values( array_unique(	array_merge( self::$links[ 'linksDesign' ]	, $parLinks[ 'linksDesign'])		, SORT_STRING ));	
+		self::$links[ 'linksDoc' ]			=  array_values( array_unique(	array_merge( self::$links[ 'linksDoc' ]		, $parLinks[ 'linksDoc' ])			, SORT_STRING ));
+		self::$links[ 'linksCompress' ]		=  array_values( array_unique(	array_merge( self::$links[ 'linksCompress' ]	, $parLinks[ 'linksCompress'])	, SORT_STRING ));
+		self::$links[ 'linksTrash' ]		=  array_values( array_unique(	array_merge( self::$links[ 'linksTrash' ]	, $parLinks[ 'linksTrash' ])		, SORT_STRING ));
+		self::$links[ 'mail' ]				=  array_values( array_unique(	array_merge( self::$links[ 'mail' ]			, $parLinks[ 'mail' ])				, SORT_STRING ));
 
 
 
 	}
+
 
 
 
@@ -154,19 +284,28 @@ class Craw
 		$linksTrash		= [];
 		$linksSubDomain = [];
 		$subDomains		= [];
+		$socialNet 		= [];
 
 
 
 		foreach ($links as $value) {			
 
-			if ( preg_match("#". self::prepareExp( self::$expDesign ) ."#i", $value) ) {
+
+
+
+			if( preg_match("#". self::prepareExp( self::$socialNetworks ) ."#i", $value) ){
+
+				$socialNet[] .= $value;
+
+
+			}elseif ( preg_match("#". self::prepareExp( self::$expDesign ) ."#i", $value) ) {
 				
 
 				if ( preg_match("#".self::$urlDomain."#i", $value) ) {
 					array_unshift($linksDesing, $value);
-				}else{
-					$linksDesing[] .=  $value;
-				}
+					}else{
+						$linksDesing[] .=  $value;
+					}
 
 
 			}elseif ( preg_match("#". self::prepareExp( self::$expImg ) ."#i", $value) ) {
@@ -203,25 +342,30 @@ class Craw
 						$linksDomain[] .= $value;#. '------ 0 -';
 
 
-
 			}else{
 
-				#$unknownLinks[] .= $value;
 
 
-				if ( preg_match("#^[http|https]#i", $value) ) {
+				if ( preg_match("#^(http|https)#i", $value) ) {
 					
+
+
+					#aqui es donde usa el poder de las keyword
 					if ( preg_match("#". self::prepareExp( self::$keywords ) ."#i", $value) ) {
 						$linksSubDomain[] 	.= $value;
 						$subDomains[]		.= self::extractDomain( $value );
 
 					}else{
-						$unknownLinks[] .= $value;
+						$unknownLinks[] .= $value;#.'-----78';
 					}
+
+
 
 				}elseif( preg_match("/[a-zA-Z0-9_\-\.]{0,100}@[a-zA-Z0-9_\-\.]+/i", $value) ){
 
-					$mails[] .= $value;
+					$mails[] .=  str_replace( 'mailto:', '', $value ); 
+
+
 				}elseif ( preg_match("#^[a-z]#i", $value) ) { // [^http]|^[a-z]
 
 					$linksDomain[] .= 'https://'.self::$urlDomain.'/'.$value;#. '------ 1 -'.self::$url;
@@ -257,6 +401,7 @@ class Craw
 					'linksSubDomain' 	=> $linksSubDomain,
 					'subDomains' 		=> $subDomains,
 					'links' 			=> $unknownLinks,
+					'socialNetwork'		=> $socialNet,
 					'linksImg' 			=> $linksImg,
 					'linksDesign' 		=> $linksDesing,
 					'linksDoc' 			=> $linksDocuments,
@@ -269,39 +414,23 @@ class Craw
 
 
 
-
-
-	# Verifica los diminos que coincidad con el dimino original de dns
-	public static function checkDomainsIp( $Dom, $ip ){
-
-
-		$AipMain = explode('.', $ip);
-		$domBad = [];
-		$domGood = [];
-
-
-
-		foreach ($Dom as $key => $value) {
-
-			$ipUrl 	=   explode('.',@dns_get_record($value,DNS_A)[0]['ip'] );
-			
-
-
-			if ( ($ipUrl[0] == $AipMain[0]) and ($ipUrl[1] == $AipMain[1]) ) 
-			{
-				$domGood[] .=  $value;
-			}
-			else
-			{
-				$domBad[] .=  $value;
-			}
-			
-
-		}
-
-		return [ 'domGood' => $domGood, 'domBad' => $domBad];
+	public static function clearLinks(  ){
+		self::$links = [	'linksMain' 		=> [], 
+							'linksSubDomain' 	=> [],
+							'subDomains' 		=> [],
+							'links' 			=> [],
+							'socialNetwork'		=> $socialNet,
+							'linksImg' 			=> [],
+							'linksDesign' 		=> [],
+							'linksDoc' 			=> [],
+							'linksCompress' 	=> [],
+							'linksTrash' 		=> [],
+							'mail' 				=> [] ];
 
 	}
+
+
+
 
 
 
@@ -338,16 +467,20 @@ class Craw
 
 			$partDom = explode('.', $value);   #www.vaca.com #www.rancho.vaca.com.mx  extractKeyword( $dom )
 
+				#tecmilenioenlinea  
 
-			if ( !preg_match("#". self::prepareExp( self::$gtopLevelDomains ) ."#i", $partDom[ (count($partDom)-2) ]) ) { 
+			if ( !preg_match("#^(". self::prepareExp( self::$gtopLevelDomains ) .")$#i", $partDom[ (count($partDom)-2) ]) ) { 
 				
 				$keywordsDom[] .= $partDom[ (count($partDom)-2) ].'\.';
 				$keywordsDom[] .= '\.'.$partDom[ (count($partDom)-2) ];
 
+				#print_r($keywordsDom);	
 			}
 			else{
 				$keywordsDom[] .= $partDom[ (count($partDom)-3) ].'\.';
 				$keywordsDom[] .= '\.'.$partDom[ (count($partDom)-3) ];
+
+
 			}
 
 
@@ -390,11 +523,9 @@ class Craw
 	*	Filtra los links quitandole caracteres innecesarios, elimina espacios etc..
 	*/
 
-
 	public static function filterLinks( $links ){
 
 		$linksFun = $links;
-
 
 		#Aqui se eliminan los dominos basura
 		if( !empty( self::$trashDominos ) )
@@ -409,13 +540,19 @@ class Craw
 		#Elimina elementos vacios o nulos del array
 		$linksFun = array_filter($linksFun);
 
-		#QUITANDO LINK REPETIDOS  "PROBLEMA CUANDO EL ARRAY TIENE MAS DE 600 ELEMENTOS"
-		$linksFun = array_unique( $linksFun , SORT_STRING );
+		#QUITANDO LINK REPETIDOS  "PROBLEMA CUANDO EL ARRAY TIENE MAS DE 600 ELEMENTOS" remove repeated
+		$linksFun = self::deleteRepeated( $linksFun );
 
 		return $linksFun;
 
-
 	}
+
+	#Elimina elementos repetidos
+	public static function deleteRepeated( $data ){
+		return array_unique( $data , SORT_STRING );
+	}
+
+	
 
 
 
@@ -596,23 +733,73 @@ class Craw
 
 
 #Agregando keyword para facilitar el trabajo al buscar subdominios
+
+
 #Craw::putkeywords( ['\.uson', 'uson\.'] );
 
-#Craw::start( 'https://www.hackplayers.com/' );
+#$data =  Craw::start( 'https://unam.mx/' );
+#$data =  Craw::start( 'https://uvm.mx/' );
 
 
+#$data =  Craw::start( 'https://une.sonora.gob.mx/' ); # no tiene
+
+
+#$data =  Craw::start( 'https://tecmilenioenlinea.mx/' );
+
+
+
+
+#$data =  Craw::start( 'https://www.unison.mx/' );
+$data =  Craw::start( 'https://tec.mx/' );
+#$data =  Craw::start( 'https://www.srm.pr.gov/' );
+
+print_r( $data );
+ 
+
+
+
+
+
+/*
+$i = 0;
+$notWorkPag = [];
+
+echo "Links : ";
+while ( true ) 
+{
+
+
+	if (  ( $l = @$data['linksMain'][ $i ] )  and $i <= 175 ) {
+		echo ", $i";
+
+		if( $d = Craw::start( $l ) )
+		{
+			$data = $d;
+		}
+		else{
+			$notWorkPag[] .= $l;
+		}
+
+	}else{
+
+		break;
+	}
+
+	$i++;
+
+
+}
+
+
+echo " FINALIZO ....\n\n";
+print_r( $data );
+echo "Links no funcionales\n\n";
+print_r( $notWorkPag );
+*/
 
 
 #https://book.hacktricks.xyz/pentesting/pentesting-web/php-tricks-esp/php-useful-functions-disable_functions-open_basedir-bypass
 
-/*
-eval('function jose(){
-	echo "esta es la funcion\n";
-}');
-
-
-jose();
-*/
 
 
 
